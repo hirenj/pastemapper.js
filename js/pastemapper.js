@@ -59,7 +59,16 @@ tmpl.innerHTML = `
   }
   #data {
     font-family: monospace;
+    font-size: 1em;
     text-align: center;
+    background-position: top;
+    background: repeating-linear-gradient(
+      0deg,
+      #eee,
+      #eee 11pt,
+      #fff 11pt,
+      #fff 22pt
+    );
   }
 </style>
 <form>
