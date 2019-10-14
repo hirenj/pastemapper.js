@@ -16,10 +16,13 @@ tmpl.innerHTML = `
   :host {
     display: block;
     position: relative;
+    padding: 0.25em;
   }
   #pastebox {
     margin-left: 50%;
     transform: translate(-50%);
+    width: 100%;
+    border: 0px;
     margin-bottom: 0.5em;
   }
   #columns, #data_columns, #data {
@@ -162,7 +165,9 @@ const bind_events = function() {
     }
     refresh_styles_with_mappings(this);
   });
-
+  this.addEventListener('dragover', ev => {
+    ev.preventDefault();
+  })
   this.addEventListener('drop', async ev => {
     let htmlstring = await drop_to_html_string(ev);
     accept_html_table.call(this,htmlstring);
