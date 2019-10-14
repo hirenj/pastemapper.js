@@ -41,6 +41,9 @@ tmpl.innerHTML = `
     font-family: 'Helvetica','Verdana',sans-serif;
     font-size: 9pt;
   }
+  #columns label span, #data_columns label span {
+    mix-blend-mode: difference;
+  }
   #columns, #data_columns {
     margin-bottom: 5px;
   }
@@ -67,13 +70,13 @@ tmpl.innerHTML = `
 const tmpl_column = document.createElement('template');
 
 tmpl_column.innerHTML = `
-  <label class="column"><input name="column" type="radio"/></label>
+  <label class="column"><input name="column" type="radio"/><span></span></label>
 `;
 
 const tmpl_data_column = document.createElement('template');
 
 tmpl_data_column.innerHTML = `
-  <label class="data_column"><input name="data_column" type="radio"/></label>
+  <label class="data_column"><input name="data_column" type="radio"/><span></span></label>
 `;
 
 const tmpl_data_item = document.createElement('template');
@@ -202,8 +205,21 @@ const update_mappings = (el) => {
   el.dispatchEvent(event);
 };
 
+const colourmap = ['rgba(141,211,199,0.7)',
+'rgba(255,255,179,0.7)',
+'rgba(190,186,218,0.7)',
+'rgba(251,128,114,0.7)',
+'rgba(128,177,211,0.7)',
+'rgba(253,180,98,0.7)',
+'rgba(179,222,105,0.7)',
+'rgba(252,205,229,0.7)',
+'rgba(217,217,217,0.7)',
+'rgba(188,128,189,0.7)',
+'rgba(204,235,197,0.7)',
+'rgba(255,237,111,0.7)']
+
 const refresh_styles_with_mappings = (el) => {
-  let colours = ['rgba(100,50,50,0.5)','rgba(50,100,50,0.5)','rgba(50,50,100,0.5)'];
+  let colours = colourmap;
   let col_colours = colours.slice();
   let data_col_colours = {};
   for (let col of el.shadowRoot.querySelectorAll(`label.column`)) {
@@ -267,7 +283,7 @@ class PasteMapper extends WrapHTML  {
     for (let colkey of Object.keys(schema)) {
       let col = tmpl_column.content.cloneNode(true);
       col.firstElementChild.firstElementChild.value = colkey;
-      col.firstElementChild.appendChild(this.ownerDocument.createTextNode(schema[colkey].description || colkey));
+      col.querySelector('span').appendChild(this.ownerDocument.createTextNode(schema[colkey].description || colkey));
       column_parent.appendChild(col);
     }
     refresh_styles_with_mappings(this);
@@ -301,7 +317,7 @@ class PasteMapper extends WrapHTML  {
     for (let colkey of headers) {
       let col = tmpl_data_column.content.cloneNode(true);
       col.firstElementChild.firstElementChild.value = colkey;
-      col.firstElementChild.appendChild(this.ownerDocument.createTextNode(colkey));
+      col.querySelector('span').appendChild(this.ownerDocument.createTextNode(colkey));
       column_parent.appendChild(col);
     }
     let items_parent = this.shadowRoot.querySelector('#data');
