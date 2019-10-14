@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Web component for mapping columns from pasted XLS",
   "main": "./js/index.js",
-  "module": "./js/main.js",
+  "module": "./js/pastemapper.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build-web": "./node_modules/.bin/webpack -d",

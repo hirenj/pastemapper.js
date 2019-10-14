@@ -1,6 +1,6 @@
 module.exports = {
   entry: {
-    'glycan': [ './js/pastemapper.js' ],
+    'pastemapper': [ './js/pastemapper.js' ],
   },
   devtool: 'source-map',
   mode: 'development',
