@@ -1,0 +1,30 @@
+{
+  "name": "pastemapper",
+  "version": "1.0.0",
+  "description": "Web component for mapping columns from pasted XLS",
+  "main": "./js/index.js",
+  "module": "./js/main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build-web": "./node_modules/.bin/webpack -d",
+    "build-watch-web": "./node_modules/.bin/webpack --watch",
+    "start": "./node_modules/webpack-dev-server/bin/webpack-dev-server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:hirenj/pastemapper.js.git"
+  },
+  "author": "hirenj@gmail.com",
+  "license": "MIT",
+  "dependencies": {
+    "cast-with-schema": "^1.4.0"
+  },
+  "devDependencies" :{
+    "@babel/core": "^7",
+    "@babel/preset-env": "",
+    "babel-loader": "^8.0.5",
+    "core-js": "2",
+    "webpack": "^4.29.6",
+    "webpack-cli": "^3.3.0"
+  }
+}
