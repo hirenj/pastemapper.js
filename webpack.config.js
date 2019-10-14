@@ -11,10 +11,6 @@ module.exports = {
   module: {
     rules: [
     {
-      test: /sugars\.svg$/,
-      use: 'raw-loader'
-    },
-    {
       test: /\.js$/,
       use: {
         loader: 'babel-loader',
