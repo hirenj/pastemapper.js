@@ -82,6 +82,68 @@ tmpl_data_item.innerHTML = `
   <div></div>
 `;
 
+const paste_to_html_string = (ev) => {
+  ev.preventDefault();
+  return Promise.resolve(ev.clipboardData.getData('text/html'));
+};
+
+const tsv_to_table = (tsv) => {
+  return '<table><tr><td>'+tsv.replace(/\n$/,'').replace(/\n/g,'</td></tr><tr><td>').replace(/\t/g,'</td><td>')+'</td></tr></table>';
+}
+
+const drop_file_to_html_string = (files) => {
+  var reader = new FileReader();
+  let file_types = [...files].map( file => file.type );
+  let html_idx = file_types.indexOf('text/html');
+  let target_idx = file_types.indexOf('text/plain');
+  if (html_idx >= 0) {
+    target_idx = html_idx;
+  }
+
+  let result = new Promise(resolve => {
+    reader.onload = function(read) {
+      resolve(html_idx < 0 ? tsv_to_table(reader.result) : reader.result);
+    }
+  });
+
+  reader.readAsText(files[target_idx]);
+
+  return result;
+};
+
+const drop_to_html_string = (ev) => {
+  ev.preventDefault();
+
+  if (ev.dataTransfer.files.length > 0) {
+    console.log('Getting from file');
+    return drop_file_to_html_string(ev.dataTransfer.files);
+  }
+
+  if (ev.dataTransfer.types.length > 0) {
+    if (ev.dataTransfer.types.indexOf('text/html') >= 0) {
+      return Promise.resolve(ev.dataTransfer.getData('text/html'));
+    }
+    return Promise.resolve(ev.dataTransfer.getData('text/plain'));
+  }
+
+};
+
+const accept_html_table = function(htmlstring) {
+  let pastedhtml = (new DOMParser()).parseFromString(htmlstring,'text/html');
+  if ( ! pastedhtml ) {
+    return false;
+  }
+  let header = pastedhtml.querySelector('tr');
+  let colnames = [...header.querySelectorAll('td')].map( el => el.textContent );
+  this.data = [...pastedhtml.querySelectorAll('tr')].map( row => {
+    let colvals = [...row.querySelectorAll('td')].map( el => el.textContent );
+    let rowdata = {};
+    colnames.forEach( (col,idx) => {
+      rowdata[col] = colvals[idx];
+    });
+    return rowdata;
+  }).slice(1);
+};
 
 if (window.ShadyCSS) {
   ShadyCSS.prepareTemplate(tmpl, 'x-pastemapper');
@@ -97,22 +159,15 @@ const bind_events = function() {
     }
     refresh_styles_with_mappings(this);
   });
-  this.addEventListener('paste', ev => {
-    ev.preventDefault();
-    let pastedhtml = (new DOMParser()).parseFromString(ev.clipboardData.getData('text/html'),'text/html');
-    if ( ! pastedhtml ) {
-      return false;
-    }
-    let header = pastedhtml.querySelector('tr');
-    let colnames = [...header.querySelectorAll('td')].map( el => el.textContent );
-    this.data = [...pastedhtml.querySelectorAll('tr')].map( row => {
-      let colvals = [...row.querySelectorAll('td')].map( el => el.textContent );
-      let rowdata = {};
-      colnames.forEach( (col,idx) => {
-        rowdata[col] = colvals[idx];
-      });
-      return rowdata;
-    }).slice(1);
+
+  this.addEventListener('drop', async ev => {
+    let htmlstring = await drop_to_html_string(ev);
+    accept_html_table.call(this,htmlstring);
+  });
+
+  this.addEventListener('paste', async ev => {
+    let htmlstring = await paste_to_html_string(ev);
+    accept_html_table.call(this,htmlstring);
   });
 }
 
