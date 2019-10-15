@@ -57,6 +57,11 @@ tmpl.innerHTML = `
     position: absolute;
     margin-left: -200vw;
   }
+  #data div {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    height: 11pt;
+  }
   #data {
     font-family: monospace;
     font-size: 1em;

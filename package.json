@@ -19,7 +19,7 @@
   "dependencies": {
     "cast-with-schema": "^1.4.0"
   },
-  "devDependencies" :{
+  "devDependencies": {
     "@babel/core": "^7",
     "@babel/preset-env": "",
     "babel-loader": "^8.0.5",
