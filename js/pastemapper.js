@@ -133,19 +133,22 @@ const drop_file_to_html_string = (files) => {
 
 const drop_to_html_string = (ev) => {
   ev.preventDefault();
-
-  if (ev.dataTransfer.files.length > 0) {
-    console.log('Getting from file');
-    return drop_file_to_html_string(ev.dataTransfer.files);
-  }
-
-  if (ev.dataTransfer.types.length > 0) {
-    if (ev.dataTransfer.types.indexOf('text/html') >= 0) {
-      return Promise.resolve(ev.dataTransfer.getData('text/html'));
+  let files = [...ev.dataTransfer.files];
+  let types = [...ev.dataTransfer.types];
+  return new Promise( resolve => {
+    if (files.length > 0) {
+      console.log('Getting from file');
+      return drop_file_to_html_string(ev.dataTransfer.files);
     }
-    return Promise.resolve(ev.dataTransfer.getData('text/plain'));
-  }
 
+    if (types.length > 0) {
+      if (types.indexOf('text/html') >= 0) {
+        return resolve(ev.dataTransfer.getData('text/html'));
+      }
+      return resolve(ev.dataTransfer.getData('text/plain'));
+    }
+    resolve("");
+  });
 };
 
 const accept_html_table = function(htmlstring) {
@@ -182,20 +185,32 @@ const bind_events = function() {
   this.addEventListener('dragover', ev => {
     ev.preventDefault();
   })
-  this.addEventListener('drop', async ev => {
+  this.shadowRoot.querySelector('form').addEventListener('drop', async ev => {
     let htmlstring = await drop_to_html_string(ev);
-    accept_html_table.call(this,htmlstring);
+    if (htmlstring.length > 0) {
+      accept_html_table.call(this,htmlstring);
+    }
   });
 
-  this.addEventListener('paste', async ev => {
+  this.shadowRoot.querySelector('form').addEventListener('paste', async ev => {
     let htmlstring = await paste_to_html_string(ev);
-    accept_html_table.call(this,htmlstring);
+    if (htmlstring.length > 0) {
+      accept_html_table.call(this,htmlstring);
+    }
   });
 }
 
+const get_value_for = (form,field) => {
+  let matched = form.querySelector(`input[type="radio"][name="${field}"]:checked`);
+  if ( ! matched ) {
+    return;
+  }
+  return matched.value;
+}
+
 const update_checkmarks = (el) => {
-  let col = el.shadowRoot.querySelector('form').column.value;
-  let data_col = el.shadowRoot.querySelector('form').data_column.value;
+  let col = get_value_for(el.shadowRoot.querySelector('form'),'column');
+  let data_col = get_value_for(el.shadowRoot.querySelector('form'),'data_column');
   if (col && el._mappings[col]) {
     let data_col = el._mappings[col];
     el.shadowRoot.querySelector(`.data_column input[value='${data_col}']`).checked = true;
@@ -207,8 +222,8 @@ const update_checkmarks = (el) => {
 };
 
 const update_mappings = (el) => {
-  let col = el.shadowRoot.querySelector('form').column.value;
-  let data_col = el.shadowRoot.querySelector('form').data_column.value;
+  let col = get_value_for(el.shadowRoot.querySelector('form'),'column');
+  let data_col = get_value_for(el.shadowRoot.querySelector('form'),'data_column');
   if (col && data_col) {
     for (let key of Object.keys(el._mappings)) {
       if (el._mappings[key] === data_col) {
