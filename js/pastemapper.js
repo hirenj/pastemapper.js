@@ -390,6 +390,11 @@ class PasteMapper extends WrapHTML  {
     let column_parent = this.shadowRoot.querySelector('#data_columns');
     let autogen_columns = (Array(Object.keys(data[0]).length).fill(1)).map( (val,idx) => { return `Column${idx}` });
     let headers = this.header ? Object.keys(data[0]) : autogen_columns;
+
+    if (this.getAttribute('max-columns')) {
+      headers = headers.slice(0,parseInt(this.getAttribute('max-columns')));
+    }
+
     this._columns = headers;
     let col_count = Math.max((this._columns || []).length,Object.keys(this._schema || {}).length);
     this.style.setProperty('--column-count',col_count);
