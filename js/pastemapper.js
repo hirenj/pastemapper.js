@@ -30,23 +30,55 @@ tmpl.innerHTML = `
     grid-template-columns: repeat(var(--column-count,auto-fill), minmax(0, 1fr));
     column-gap: 5px;
   }
-  #columns label, #data_columns label {
+  #columns label, #data_columns label, #preview_description {
+    font-family: 'Helvetica','Verdana',sans-serif;
+    font-size: 9pt;
+  }
+
+  #preview_description {
+    color: #aaa;
+  }
+
+  #columns label, #data_columns label {  
     border-radius: 1em;
     background-color: #eee;
+    color: #fff;
     padding: 5px;
     text-align: center;
-    color: #fff;
     box-shadow: 3px 3px 3px #ddd;
     overflow: hidden;
     text-overflow: ellipsis;
     border: solid transparent 2px;
     cursor: pointer;
-    font-family: 'Helvetica','Verdana',sans-serif;
-    font-size: 9pt;
   }
+  #data_columns label {
+    color: #000;
+  }
+
+  #data_columns label.drophover {
+    box-shadow: 3px 3px 3px #aaa;
+  }
+
+  #columns label[draggable] {
+    cursor: grab;
+  }
+
+  #columns label[draggable]:active {
+    cursor: grabbing;
+  }
+
+  #data_columns label span {
+    mix-blend-mode: initial;
+  }
+
   #columns label span, #data_columns label span {
+    pointer-events: none;
+  }
+
+  #columns label span, #data_columns label[style*="background"] span {
     mix-blend-mode: difference;
   }
+
   #columns, #data_columns {
     margin-bottom: 5px;
   }
@@ -80,6 +112,7 @@ tmpl.innerHTML = `
 <input id="pastebox" type="search" autocomplete="off" placeholder="Paste data here"/>
 <div id="columns"></div>
 <div id="data_columns"></div>
+<label id="preview_description">Data preview (first 5 rows only)</label>
 <div id="data"></div>
 </form>
 `;
@@ -87,7 +120,7 @@ tmpl.innerHTML = `
 const tmpl_column = document.createElement('template');
 
 tmpl_column.innerHTML = `
-  <label class="column"><input name="column" type="radio"/><span></span></label>
+  <label draggable="true" class="column"><input name="column" type="radio"/><span></span></label>
 `;
 
 const tmpl_data_column = document.createElement('template');
@@ -157,6 +190,9 @@ const accept_html_table = function(htmlstring) {
     return false;
   }
   let header = pastedhtml.querySelector('tr');
+  if ( ! header ) {
+    return;
+  }
   let colnames = [...header.querySelectorAll('td')].map( el => el.textContent );
   this.data = [...pastedhtml.querySelectorAll('tr')].map( row => {
     let colvals = [...row.querySelectorAll('td')].map( el => el.textContent );
@@ -316,6 +352,11 @@ class PasteMapper extends WrapHTML  {
     this.style.setProperty('--column-count',Math.max((this._columns || []).length,Object.keys(this._schema).length));
     for (let colkey of Object.keys(schema)) {
       let col = tmpl_column.content.cloneNode(true);
+      col.querySelector( '[draggable]' )
+          .ondragstart = ev => {
+            ev.dataTransfer.setData("text/plain", ev.target.querySelector('input').getAttribute('value') );
+          }
+
       col.firstElementChild.firstElementChild.value = colkey;
       col.querySelector('span').appendChild(this.ownerDocument.createTextNode(schema[colkey].description || colkey));
       column_parent.appendChild(col);
@@ -352,6 +393,20 @@ class PasteMapper extends WrapHTML  {
       let col = tmpl_data_column.content.cloneNode(true);
       col.firstElementChild.firstElementChild.value = colkey;
       col.querySelector('span').appendChild(this.ownerDocument.createTextNode(colkey));
+      col.firstElementChild.ondragover = ev => { ev.target.classList.add('drophover'); ev.preventDefault();}
+      col.firstElementChild.ondragleave = ev => {
+        ev.target.classList.remove('drophover');
+        ev.preventDefault();
+      }
+      col.firstElementChild.ondrop = ev => {
+        let value = ev.dataTransfer.getData('text/plain');
+        let form = this.shadowRoot.querySelector('form');
+        ev.target.classList.remove('drophover');
+        form.querySelector(`input[type="radio"][name="column"][value="${value}"]`).checked = true;
+        form.querySelector(`input[type="radio"][name="data_column"][value="${colkey}"]`).checked = true;
+        update_mappings(this);
+        refresh_styles_with_mappings(this);
+      }
       column_parent.appendChild(col);
     }
     let items_parent = this.shadowRoot.querySelector('#data');
