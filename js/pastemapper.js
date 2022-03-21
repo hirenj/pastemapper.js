@@ -368,7 +368,11 @@ class PasteMapper extends WrapHTML  {
     return this._data.map( dat => {
       let result = {};
       for (const [key, value] of Object.entries(this._mappings)) {
-        result[key] = dat[value].trim();
+        if (typeof dat[value] !== 'string') {
+          result[key] = (''+dat[value]).trim();
+        } else {
+          result[key] = dat[value].trim();
+        }
       }
       return result;
     }).map( obj => this._toschema(obj) );
