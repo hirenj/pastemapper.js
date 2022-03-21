@@ -165,9 +165,16 @@ const drop_file_to_html_string = (files) => {
 };
 
 const drop_to_html_string = (ev) => {
-  ev.preventDefault();
   let files = [...ev.dataTransfer.files];
   let types = [...ev.dataTransfer.types];
+  let file_types = [...files].map( file => file.type );
+  if ((types.indexOf('text/csv') >= 0) || (types.indexOf('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') >= 0)) {
+    return Promise.resolve("");
+  }
+  if ((file_types.indexOf('text/csv') >= 0) || (file_types.indexOf('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') >= 0)) {
+    return Promise.resolve("");
+  }
+  ev.preventDefault();
   return new Promise( resolve => {
     if (files.length > 0) {
       console.log('Getting from file');
