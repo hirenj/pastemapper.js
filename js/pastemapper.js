@@ -390,6 +390,16 @@ class PasteMapper extends WrapHTML  {
   }
 
   set data(data) {
+    if (data === null || typeof data === 'undefined') {
+      this._data = [];
+      refresh_styles_with_mappings(this);
+
+      let event = new Event('change',{bubbles: true});
+      this.dispatchEvent(event);
+      this.style.setProperty('--column-count',null);
+
+      return;
+    } 
     this._data = data;
     for (let col of this.shadowRoot.querySelectorAll('.data_column')) {
       col.parentNode.removeChild(col);
