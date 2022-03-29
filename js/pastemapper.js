@@ -82,7 +82,7 @@ tmpl.innerHTML = `
   #columns, #data_columns {
     margin-bottom: 5px;
   }
-  #columns label:focus-within {
+  #columns label:focus-within, #columns label:has(input:checked), #data_columns label:has(input:checked) {
     border: solid black 2px;
   }
   label > input {
@@ -276,7 +276,8 @@ const update_mappings = (el) => {
     el._mappings[col] = data_col;
   }
   for (let input of el.shadowRoot.querySelectorAll('.column input')) {
-    input.checked = false;
+    // Disable unchecking the inputs to support keyboard navigation
+    // input.checked = false;
   }
   let event = new Event('change',{bubbles: true});
   el.dispatchEvent(event);
