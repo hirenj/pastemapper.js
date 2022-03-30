@@ -67,16 +67,13 @@ tmpl.innerHTML = `
     cursor: grabbing;
   }
 
-  #data_columns label span {
-    mix-blend-mode: initial;
-  }
 
   #columns label span, #data_columns label span {
     pointer-events: none;
   }
 
   #columns label span, #data_columns label[style*="background"] span {
-    mix-blend-mode: difference;
+    color: black;
   }
 
   #columns, #data_columns {
