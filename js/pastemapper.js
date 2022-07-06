@@ -134,7 +134,14 @@ tmpl_data_item.innerHTML = `
 
 const paste_to_html_string = (ev) => {
   ev.preventDefault();
-  return Promise.resolve(ev.clipboardData.getData('text/html'));
+  let html = ev.clipboardData.getData('text/html');
+  return Promise.resolve(html);
+};
+
+const paste_to_text_string = (ev) => {
+  ev.preventDefault();
+  let text = ev.clipboardData.getData('text/plain');
+  return Promise.resolve(text);
 };
 
 const tsv_to_table = (tsv) => {
@@ -236,6 +243,11 @@ const bind_events = function() {
     let htmlstring = await paste_to_html_string(ev);
     if (htmlstring.length > 0) {
       accept_html_table.call(this,htmlstring);
+    } else {
+      let textstring = await paste_to_text_string(ev);
+      if (textstring.length > 0) {
+        accept_html_table.call(this,tsv_to_table(textstring));
+      }
     }
   });
 }
@@ -388,7 +400,7 @@ class PasteMapper extends WrapHTML  {
   }
 
   set data(data) {
-    if (data === null || typeof data === 'undefined') {
+    if (data === null || typeof data === 'undefined' || data.length < 1) {
       this._data = [];
       refresh_styles_with_mappings(this);
 
