@@ -135,6 +135,9 @@ tmpl_data_item.innerHTML = `
 const paste_to_html_string = (ev) => {
   ev.preventDefault();
   let html = ev.clipboardData.getData('text/html');
+  if (html.indexOf('<pre') == 0 && html.indexOf('<table') < 0) {
+    html = '';
+  }
   return Promise.resolve(html);
 };
 
