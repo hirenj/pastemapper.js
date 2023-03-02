@@ -171,28 +171,52 @@ const drop_file_to_html_string = (files) => {
   return result;
 };
 
-const drop_to_html_string = (ev) => {
+const drop_to_html_string = async (ev) => {
   let files = [...ev.dataTransfer.files];
   let types = [...ev.dataTransfer.types];
   let file_types = [...files].map( file => file.type );
   if ((types.indexOf('text/csv') >= 0) || (types.indexOf('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') >= 0)) {
-    return Promise.resolve("");
+    return Promise.reject(new Error("Can't parse csv or excel"));
   }
   if ((file_types.indexOf('text/csv') >= 0) || (file_types.indexOf('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') >= 0)) {
-    return Promise.resolve("");
+    return Promise.reject(new Error("Can't parse csv or excel"));
   }
-  ev.preventDefault();
-  return new Promise( resolve => {
+  for (let item of [...ev.dataTransfer.items].filter(item => item.type == 'text/html') ) {
+    let data_promise = new Promise(resolve => {
+      item.getAsString( data => {
+        resolve(data);
+      })
+    });
+    let value = await data_promise;
+    if (value !== '') {
+      return Promise.resolve(value);
+    }
+  }
+  return new Promise( async resolve => {
     if (files.length > 0) {
       console.log('Getting from file');
       return drop_file_to_html_string(ev.dataTransfer.files);
     }
 
     if (types.length > 0) {
+      let data;
       if (types.indexOf('text/html') >= 0) {
-        return resolve(ev.dataTransfer.getData('text/html'));
+        data = await ev.dataTransfer.getData('text/html');
       }
-      return resolve(ev.dataTransfer.getData('text/plain'));
+      if (data == '') {
+        data = null;
+      }
+      if (! data && types.indexOf('text/plain') >= 0) {
+        data = await ev.dataTransfer.getData('text/plain');
+      }
+      if (data == '') {
+        data = null;
+      }
+      if (! data) {
+        data = await ev.dataTransfer.getData(types[0]);
+      }
+
+      resolve(data);
     }
     resolve("");
   });
@@ -235,12 +259,20 @@ const bind_events = function() {
   this.addEventListener('dragover', ev => {
     ev.preventDefault();
   })
-  this.shadowRoot.querySelector('form').addEventListener('drop', async ev => {
-    let htmlstring = await drop_to_html_string(ev);
-    if (htmlstring.length > 0) {
-      accept_html_table.call(this,htmlstring);
+  this.shadowRoot.querySelector('form').ondrop = async ev => {
+    ev.preventDefault();
+    const backup_text = ev.dataTransfer.getData('text/plain');
+    try {
+      let htmlstring = await drop_to_html_string(ev);
+      if (htmlstring.length > 0) {
+        accept_html_table.call(this,htmlstring);
+      } else if (backup_text.length > 0) {
+        accept_html_table.call(this,tsv_to_table(backup_text));
+      }
+    } catch(e) {
+      console.log(e);
     }
-  });
+  };
 
   this.shadowRoot.querySelector('form').addEventListener('paste', async ev => {
     let htmlstring = await paste_to_html_string(ev);
