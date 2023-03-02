@@ -9,6 +9,8 @@ let stop_prop = (e) => e.stopPropagation() ;
 
 const change_symb = Symbol('change_timeout');
 
+const child_drag_symb = Symbol('child_dragging');
+
 const tmpl = document.createElement('template');
 
 tmpl.innerHTML = `
@@ -24,6 +26,31 @@ tmpl.innerHTML = `
     width: 100%;
     border: 0px;
     margin-bottom: 0.5em;
+  }
+  section.drag_modal {
+    display:none;
+  }
+  :host([drop-active]) section.drag_modal {
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+    background: rgba(50,50,50,0.5);
+  }
+  :host([drop-active]) section.drag_modal {
+    color: rgba(230,230,230,1);
+    font-family: 'Helvetica','Verdana',sans-serif;
+    font-size: 16pt;
+    font-weight: bolder;
+    pointer-events: none; 
+  }
+  :host([drop-active]) #pastebox, :host([drop-active]) #columns {
+    pointer-events: none;
   }
   #columns, #data_columns, #data {
     display: grid;
@@ -112,6 +139,9 @@ tmpl.innerHTML = `
 <label id="preview_description">Data preview (first 5 rows only)</label>
 <div id="data"></div>
 </form>
+<section class="drag_modal">
+Drag TSV or Excel data here
+</section>
 `;
 
 const tmpl_column = document.createElement('template');
@@ -257,9 +287,22 @@ const bind_events = function() {
     refresh_styles_with_mappings(this);
   });
   this.addEventListener('dragover', ev => {
+    if ( ! this[child_drag_symb]) {
+      this.setAttribute('drop-active',true);
+    }
     ev.preventDefault();
-  })
-  this.shadowRoot.querySelector('form').ondrop = async ev => {
+  });
+  this.addEventListener('dragleave', ev => {
+    ev.target.removeAttribute('drop-active');
+    ev.preventDefault();
+  });
+  this.addEventListener('dragend', ev => {
+    ev.target.removeAttribute('drop-active');
+    ev.preventDefault();
+  });
+
+  this.ondrop = async ev => {
+    ev.target.removeAttribute('drop-active');
     ev.preventDefault();
     const backup_text = ev.dataTransfer.getData('text/plain');
     try {
@@ -406,7 +449,12 @@ class PasteMapper extends WrapHTML  {
       let col = tmpl_column.content.cloneNode(true);
       col.querySelector( '[draggable]' )
           .ondragstart = ev => {
+            this[child_drag_symb] = true;
             ev.dataTransfer.setData("text/plain", ev.target.querySelector('input').getAttribute('value') );
+          }
+      col.querySelector( '[draggable]' )
+          .ondragend = ev => {
+            this[child_drag_symb] = false;
           }
 
       col.firstElementChild.firstElementChild.value = colkey;
