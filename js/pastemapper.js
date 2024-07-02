@@ -19,6 +19,9 @@ tmpl.innerHTML = `
     display: block;
     position: relative;
     padding: 0.25em;
+    --base-lum: 100%;
+    --base-chroma: 50%;
+    --base-hue: 100;
   }
   #pastebox {
     margin-left: 50%;
@@ -72,7 +75,7 @@ tmpl.innerHTML = `
     color: #fff;
     padding: 5px;
     text-align: center;
-    box-shadow: 3px 3px 3px #ddd;
+    box-shadow: 3px 3px 3px oklch( from var(--color) l 20% h / 0.25 );
     overflow: hidden;
     text-overflow: ellipsis;
     border: solid transparent 2px;
@@ -83,7 +86,17 @@ tmpl.innerHTML = `
   }
 
   #data_columns label.drophover {
-    box-shadow: 3px 3px 3px #aaa;
+    box-shadow: 3px 3px 3px oklch( from var(--color) l 50% h / 0.5 );
+  }
+
+  #data_columns label.data_column, #columns label.column {
+    --color-index: 0;
+    --color : oklch(var(--base-lum) var(--base-chroma) calc( var(--base-hue) + 133 * var(--color-index) ) );
+    --l-threshold: 0.7;    
+    --l: clamp(0, (var(--l-threshold) / l - 1) * infinity, 1);
+    --foreground: oklch(from var(--color) var(--l) 0 h);
+    background-color: var(--color);
+    color: var(--foreground);
   }
 
   #columns label[draggable] {
@@ -97,10 +110,6 @@ tmpl.innerHTML = `
 
   #columns label span, #data_columns label span {
     pointer-events: none;
-  }
-
-  #columns label span, #data_columns label[style*="background"] span {
-    color: black;
   }
 
   #columns, #data_columns {
@@ -370,37 +379,23 @@ const update_mappings = (el) => {
   el.dispatchEvent(event);
 };
 
-const colourmap = ['rgba(141,211,199,0.7)',
-'rgba(255,255,179,0.7)',
-'rgba(190,186,218,0.7)',
-'rgba(251,128,114,0.7)',
-'rgba(128,177,211,0.7)',
-'rgba(253,180,98,0.7)',
-'rgba(179,222,105,0.7)',
-'rgba(252,205,229,0.7)',
-'rgba(217,217,217,0.7)',
-'rgba(188,128,189,0.7)',
-'rgba(204,235,197,0.7)',
-'rgba(255,237,111,0.7)']
-
 const refresh_styles_with_mappings = (el) => {
-  let colours = colourmap;
-  let col_colours = colours.slice();
-  let data_col_colours = {};
+  let data_col_idxes = {};
+  let idx = 0;
   for (let col of el.shadowRoot.querySelectorAll(`label.column`)) {
-    let curr = col_colours.shift();
-    col.style.backgroundColor = curr;
+    idx += 1;
+    col.style.setProperty("--color-index", idx);
     let colname = col.querySelector('input').value;
     if (el._mappings[colname]) {
-      data_col_colours[ el._mappings[colname] ] = curr;
+      data_col_idxes[ el._mappings[colname] ] = idx;
     }
   }
   for (let col of el.shadowRoot.querySelectorAll(`label.data_column`)) {
     let colname = col.querySelector('input').value;
-    if ( data_col_colours[ colname ]) {
-      col.style.backgroundColor = data_col_colours[ colname ];
+    if ( data_col_idxes[ colname ]) {
+      col.style.setProperty("--color-index", data_col_idxes[ colname ]);
     } else {
-      col.style.removeProperty('background-color');
+      col.style.removeProperty('--color-index');
     }
   }
 
