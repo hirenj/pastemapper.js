@@ -1,5 +1,6 @@
 import castWithSchema from 'cast-with-schema';
 
+const ELEMENT_NAME = 'ccg-pastemapper';
 
 function WrapHTML() { return Reflect.construct(HTMLElement, [], Object.getPrototypeOf(this).constructor); }
 Object.setPrototypeOf(WrapHTML.prototype, HTMLElement.prototype);
@@ -282,7 +283,7 @@ const accept_html_table = function(htmlstring) {
 };
 
 if (window.ShadyCSS) {
-  ShadyCSS.prepareTemplate(tmpl, 'x-pastemapper');
+  ShadyCSS.prepareTemplate(tmpl, ELEMENT_NAME);
 }
 
 const bind_events = function() {
@@ -546,6 +547,6 @@ class PasteMapper extends WrapHTML  {
   }
 }
 
-customElements.define('x-pastemapper',PasteMapper);
+customElements.define(ELEMENT_NAME,PasteMapper);
 
 export default PasteMapper;
