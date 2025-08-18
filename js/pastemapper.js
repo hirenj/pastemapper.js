@@ -91,17 +91,14 @@ tmpl.innerHTML = `
     height: 0px;
   }
 
-  :host([data]) {
-    & section.paste_options {
+  :host([data]) section.paste_options {
       visibility: initial;
       height: initial;
-    }
+  }
 
-    & #pastebox {
-      height: 1em;
-      font-size: 0.5em;
-    }
-
+  :host([data]) #pastebox {
+    height: 1em;
+    font-size: 0.5em;
   }
 
   #columns, #data_columns, #data {
