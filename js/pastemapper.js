@@ -30,32 +30,80 @@ tmpl.innerHTML = `
     width: 100%;
     border: 0px;
     margin-bottom: 0.5em;
+    transition: height 1s ease-in-out;
   }
-  section.drag_modal {
-    display:none;
-  }
-  :host([drop-active]) section.drag_modal {
-    pointer-events: none;
+  form {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    position: absolute;
-    top: 0px;
-    left: 0px;
-    width: 100%;
-    height: 100%;
-    background: rgba(50,50,50,0.5);
+    flex-direction: column;
+    position: relative;
+
+    & #pastebox {
+      -webkit-appearance: none;
+      box-sizing: content-box;
+      height: 100vh;
+      max-height: 5em;
+      border: dashed rgba(100,100,100,0.5) 1px;
+      border-radius: 5px;
+    }
+    & #pastebox::placeholder {
+      text-align: center;
+      font-size: 2em;
+      font-weight: bold;
+      margin: 0px;
+    }
   }
+
+  section.drag_modal {
+    display: none;
+  }
+
+
   :host([drop-active]) section.drag_modal {
-    color: rgba(230,230,230,1);
-    font-family: 'Helvetica','Verdana',sans-serif;
-    font-size: 16pt;
-    font-weight: bolder;
-    pointer-events: none; 
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      top: 0px;
+      left: 0px;
+      width: 100%;
+      height: 100%;
+      background: rgba(50,50,50,0.5);
+      color: rgba(230,230,230,1);
+      font-family: 'Helvetica','Verdana',sans-serif;
+      font-size: 16pt;
+      font-weight: bolder;
+      pointer-events: none;
   }
-  :host([drop-active]) #pastebox, :host([drop-active]) #columns {
-    pointer-events: none;
+
+  :host([drop-active]) {
+    & form #pastebox::placeholder {
+      font-size: 0px;
+    }
+
+    & #pastebox, & #columns {
+      pointer-events: none;
+    }
+
   }
+
+  :host section.paste_options {
+    visibility: hidden;
+    height: 0px;
+  }
+
+  :host([data]) {
+    & section.paste_options {
+      visibility: initial;
+      height: initial;
+    }
+
+    & #pastebox {
+      height: 1em;
+      font-size: 0.5em;
+    }
+
+  }
+
   #columns, #data_columns, #data {
     display: grid;
     grid-template-columns: repeat(var(--column-count,auto-fill), minmax(0, 1fr));
@@ -70,7 +118,7 @@ tmpl.innerHTML = `
     color: #aaa;
   }
 
-  #columns label, #data_columns label {  
+  #columns label, #data_columns label {
     border-radius: 1em;
     background-color: #eee;
     color: #fff;
@@ -93,7 +141,7 @@ tmpl.innerHTML = `
   #data_columns label.data_column, #columns label.column {
     --color-index: 0;
     --color : oklch(var(--base-lum) var(--base-chroma) calc( var(--base-hue) + 133 * var(--color-index) ) );
-    --l-threshold: 0.7;    
+    --l-threshold: 0.7;
     --l: clamp(0, (var(--l-threshold) / l - 1) * infinity, 1);
     --foreground: oklch(from var(--color) var(--l) 0 h);
     background-color: var(--color);
@@ -143,14 +191,16 @@ tmpl.innerHTML = `
   }
 </style>
 <form>
-<input id="pastebox" type="search" autocomplete="off" placeholder="Paste data here"/>
+<input id="pastebox" type="search" autocomplete="off" placeholder="."/>
+<section class="paste_options">
 <div id="columns"></div>
 <div id="data_columns"></div>
 <label id="preview_description">Data preview (first 5 rows only)</label>
 <div id="data"></div>
+</section>
 </form>
 <section class="drag_modal">
-Drag TSV or Excel data here
+<slot name="placeholder">Paste or drag TSV & Excel data here</slot>
 </section>
 `;
 
@@ -205,23 +255,30 @@ const drop_file_to_html_string = (files) => {
       resolve(html_idx < 0 ? tsv_to_table(reader.result) : reader.result);
     }
   });
+  if (target_idx < 0) {
+    return;
+  }
 
   reader.readAsText(files[target_idx]);
 
   return result;
 };
 
-const drop_to_html_string = async (ev) => {
+const drop_to_html_string = async function(ev) {
   let files = [...ev.dataTransfer.files];
   let types = [...ev.dataTransfer.types];
   let file_types = [...files].map( file => file.type );
+
   if ((types.indexOf('text/csv') >= 0) || (types.indexOf('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') >= 0)) {
     return Promise.reject(new Error("Can't parse csv or excel"));
   }
   if ((file_types.indexOf('text/csv') >= 0) || (file_types.indexOf('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') >= 0)) {
     return Promise.reject(new Error("Can't parse csv or excel"));
   }
-  for (let item of [...ev.dataTransfer.items].filter(item => item.type == 'text/html') ) {
+
+  let item_types = [...ev.dataTransfer.items].map( item => item.type );
+
+  for (let item of [...ev.dataTransfer.items].filter(item => ['text/html','text/plain'].indexOf(item.type) >= 0 ) ) {
     let data_promise = new Promise(resolve => {
       item.getAsString( data => {
         resolve(data);
@@ -232,10 +289,14 @@ const drop_to_html_string = async (ev) => {
       return Promise.resolve(value);
     }
   }
+
   return new Promise( async resolve => {
     if (files.length > 0) {
-      console.log('Getting from file');
-      return drop_file_to_html_string(ev.dataTransfer.files);
+      let html_attempt = drop_file_to_html_string(ev.dataTransfer.files);
+      if (html_attempt) {
+        return html_attempt;
+      }
+      return resolve("");
     }
 
     if (types.length > 0) {
@@ -316,7 +377,7 @@ const bind_events = function() {
     ev.preventDefault();
     const backup_text = ev.dataTransfer.getData('text/plain');
     try {
-      let htmlstring = await drop_to_html_string(ev);
+      let htmlstring = await drop_to_html_string.call(this,ev);
       if (htmlstring.length > 0) {
         accept_html_table.call(this,htmlstring);
       } else if (backup_text.length > 0) {
@@ -410,16 +471,20 @@ class PasteMapper extends WrapHTML  {
 
   constructor() {
     super();
-  }
-
-  connectedCallback() {
-    if (window.ShadyCSS) {
-      ShadyCSS.styleElement(this);
-    }
     let shadowRoot = this.attachShadow({mode: 'open'});
     shadowRoot.appendChild(tmpl.content.cloneNode(true));
     bind_events.call(this);
     this._mappings = {};
+    if (this._schema) {
+      this.template = this._schema;
+    }
+    this.shadowRoot.querySelector('slot[name="placeholder"]').addEventListener('slotchange', (ev) => {
+      this.shadowRoot.querySelector('#pastebox').setAttribute('placeholder',this.shadowRoot.querySelector('slot[name="placeholder"]').assignedElements()[0].textContent);
+    });
+    this.shadowRoot.querySelector('#pastebox').setAttribute('placeholder',this.shadowRoot.querySelector('slot[name="placeholder"]').textContent);
+  }
+
+  connectedCallback() {
   }
 
   get template() {
@@ -428,12 +493,15 @@ class PasteMapper extends WrapHTML  {
 
   set template(schema) {
 
-
     this._toschema = (object) => {
       return castWithSchema(object,{ type: 'object', properties: schema });
     };
 
     this._schema = schema;
+
+    if ( ! this.shadowRoot ) {
+      return;
+    }
 
 
     for (let col of this.shadowRoot.querySelectorAll('.column')) {
@@ -446,11 +514,21 @@ class PasteMapper extends WrapHTML  {
       col.querySelector( '[draggable]' )
           .ondragstart = ev => {
             this[child_drag_symb] = true;
+            for (let el of this.shadowRoot.querySelectorAll('[draggable]')) {
+              if (el !== ev.target) {
+                el.style.color = 'rgba(0,0,0,0)';
+              }
+            }
             ev.dataTransfer.setData("text/plain", ev.target.querySelector('input').getAttribute('value') );
           }
       col.querySelector( '[draggable]' )
           .ondragend = ev => {
             this[child_drag_symb] = false;
+            for (let el of this.shadowRoot.querySelectorAll('[draggable]')) {
+              if (el !== ev.target) {
+                el.style.color = 'initial';
+              }
+            }
           }
 
       col.firstElementChild.firstElementChild.value = colkey;
@@ -486,10 +564,11 @@ class PasteMapper extends WrapHTML  {
       let event = new Event('change',{bubbles: true});
       this.dispatchEvent(event);
       this.style.setProperty('--column-count',null);
-
+      this.removeAttribute('data');
       return;
-    } 
+    }
     this._data = data;
+    this.setAttribute('data','');
     for (let col of this.shadowRoot.querySelectorAll('.data_column')) {
       col.parentNode.removeChild(col);
     }
