@@ -131,8 +131,13 @@ tmpl.innerHTML = `
     color: #000;
   }
 
-  #data_columns label.drophover {
-    box-shadow: 3px 3px 3px oklch( from var(--color) l 50% h / 0.5 );
+  :host([column_drag]) #data_columns label.data_column.drophover {
+    box-shadow: inset 0px 0px 20px 1px oklch( from var(--dragging-color) l 50% h / 1 );
+  }
+
+  :host([column_drag]) #data_columns label.data_column {
+    border-color: rgba(100,100,100,0.5);
+    border-style: dotted;
   }
 
   #data_columns label.data_column, #columns label.column {
@@ -146,8 +151,17 @@ tmpl.innerHTML = `
   }
 
   #columns label[draggable] {
+    border-color: rgba(150,150,150,0);
     cursor: grab;
   }
+
+  #columns label[draggable]:hover {
+    border-color: rgba(150,150,150,0.75);
+    --base-chroma-darker: calc( var(--base-chroma) + 25% );
+    --color : oklch(var(--base-lum) var(--base-chroma-darker) calc( var(--base-hue) + 133 * var(--color-index) ) );
+    box-shadow: 3px 3px 3px oklch( from var(--color) l 50% h / 0.6 );
+  }
+
 
   #columns label[draggable]:active {
     cursor: grabbing;
@@ -452,8 +466,10 @@ const refresh_styles_with_mappings = (el) => {
   for (let col of el.shadowRoot.querySelectorAll(`label.data_column`)) {
     let colname = col.querySelector('input').value;
     if ( data_col_idxes[ colname ]) {
+      col.setAttribute('assigned','');
       col.style.setProperty("--color-index", data_col_idxes[ colname ]);
     } else {
+      col.removeAttribute('assigned');
       col.style.removeProperty('--color-index');
     }
   }
@@ -511,21 +527,27 @@ class PasteMapper extends WrapHTML  {
       col.querySelector( '[draggable]' )
           .ondragstart = ev => {
             this[child_drag_symb] = true;
+            this.setAttribute('column_drag','');
             for (let el of this.shadowRoot.querySelectorAll('[draggable]')) {
               if (el !== ev.target) {
                 el.style.color = 'rgba(0,0,0,0)';
               }
             }
+            let drag_color = window.getComputedStyle(ev.target).getPropertyValue('--color');
+            this.style.setProperty('--dragging-color',drag_color);
+            ev.dataTransfer.effectAllowed = "copy";
             ev.dataTransfer.setData("text/plain", ev.target.querySelector('input').getAttribute('value') );
           }
       col.querySelector( '[draggable]' )
           .ondragend = ev => {
             this[child_drag_symb] = false;
+            this.removeAttribute('column_drag');
             for (let el of this.shadowRoot.querySelectorAll('[draggable]')) {
               if (el !== ev.target) {
                 el.style.color = 'initial';
               }
             }
+            this.style.removeProperty('--dragging-color');
           }
 
       col.firstElementChild.firstElementChild.value = colkey;
@@ -584,7 +606,7 @@ class PasteMapper extends WrapHTML  {
       let col = tmpl_data_column.content.cloneNode(true);
       col.firstElementChild.firstElementChild.value = colkey;
       col.querySelector('span').appendChild(this.ownerDocument.createTextNode(colkey));
-      col.firstElementChild.ondragover = ev => { ev.target.classList.add('drophover'); ev.preventDefault();}
+      col.firstElementChild.ondragover = ev => { ev.dataTransfer.dropEffect='copy'; ev.target.classList.add('drophover'); ev.preventDefault();}
       col.firstElementChild.ondragleave = ev => {
         ev.target.classList.remove('drophover');
         ev.preventDefault();
