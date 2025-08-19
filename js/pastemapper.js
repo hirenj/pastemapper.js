@@ -131,6 +131,11 @@ tmpl.innerHTML = `
     color: #000;
   }
 
+  #data_columns label.data_column:not([assigned]) {
+    --base-lum: 90%;
+    --color : oklch(var(--base-lum) 0% calc( var(--base-hue) + 133 * var(--color-index) ) );
+  }
+
   :host([column_drag]) #data_columns label.data_column.drophover {
     box-shadow: inset 0px 0px 20px 1px oklch( from var(--dragging-color) l 50% h / 1 );
   }
