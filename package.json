@@ -10,9 +10,10 @@
     "build-watch-web": "./node_modules/.bin/webpack --watch",
     "start": "./node_modules/webpack-dev-server/bin/webpack-dev-server.js"
   },
+  "files": ["js/", "package.json"],
   "repository": {
     "type": "git",
-    "url": "git@github.com:hirenj/pastemapper.js.git"
+    "url": "git+https://github.com/hirenj/pastemapper.js.git"
   },
   "author": "hirenj@gmail.com",
   "license": "MIT",
