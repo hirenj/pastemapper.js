@@ -25,7 +25,7 @@
     "@babel/preset-env": "",
     "babel-loader": "^8.0.5",
     "core-js": "2",
-    "webpack": "^4.29.6",
+    "webpack": "^5.105.4",
     "webpack-cli": "^3.3.0"
   }
 }
