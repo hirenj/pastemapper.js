@@ -24,7 +24,10 @@ tmpl.innerHTML = `
     --base-chroma: 50%;
     --base-hue: 100;
   }
+  /* Sizes are in rem so they follow the browser's text size setting.
+     Form controls otherwise get a fixed 13.33px from the browser. */
   #pastebox {
+    font-size: 0.83333rem;
     margin-left: 50%;
     transform: translate(-50%);
     width: 100%;
@@ -70,7 +73,7 @@ tmpl.innerHTML = `
       background: rgba(50,50,50,0.5);
       color: rgba(230,230,230,1);
       font-family: 'Helvetica','Verdana',sans-serif;
-      font-size: 16pt;
+      font-size: 1.33333rem;
       font-weight: bolder;
       pointer-events: none;
   }
@@ -108,7 +111,7 @@ tmpl.innerHTML = `
   }
   #columns label, #data_columns label, #preview_description {
     font-family: 'Helvetica','Verdana',sans-serif;
-    font-size: 9pt;
+    font-size: 0.75rem;
   }
 
   #preview_description {
@@ -190,7 +193,7 @@ tmpl.innerHTML = `
   #data div {
     overflow: hidden;
     text-overflow: ellipsis;
-    height: 11pt;
+    height: 0.91667rem;
   }
   #data {
     font-family: monospace;
@@ -200,9 +203,9 @@ tmpl.innerHTML = `
     background: repeating-linear-gradient(
       0deg,
       #eee,
-      #eee 11pt,
-      #fff 11pt,
-      #fff 22pt
+      #eee 0.91667rem,
+      #fff 0.91667rem,
+      #fff 1.83333rem
     );
   }
 </style>
